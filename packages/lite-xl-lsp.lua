@@ -1,8 +1,9 @@
 local core = require 'core'
+local common = require 'core.common'
 local util = require 'plugins.lite-xl-pm.util'
+local logger = require 'plugins.lite-xl-pm.logger'
 
-local prefix = "[lsp-install] "
-
+local lspinstall = logger:new("[lsp-install]")
 local git = {
   lsp = "https://github.com/jgmdev/lite-xl-lsp.git",
   widgets = "https://github.com/jgmdev/lite-xl-widgets.git"
@@ -16,39 +17,45 @@ local function clone(url, path, callback)
 end
 
 local function remove(path)
-  local ok, err = util.rmtree(path)
+  local ok, err = core.rm(path, true)
   if not ok then
-    core.log(prefix.."Failed to remove '"..path.."': "..err)
+    lspinstall:error("Failed to remove '"..path.."': "..err)
     return false
   end
   return true
 end
 
-core.log(prefix .. "Cloning lite-xl-lsp plugin...")
+lspinstall:log("Cloning lite-xl-lsp plugin...")
 clone(git.lsp, DATADIR.."/lite-xl-lsp", function(ok)
   if not ok then
-    return core.log(prefix.."Failed to clone lite-xl-lsp!")
+    return lspinstall:error("Failed to clone lite-xl-lsp!")
   end
-  core.log(prefix.."Cloning lite-xl-widgets")
+  lspconfig:log("Cloning lite-xl-widgets")
   clone(git.widgets, DATADIR.."/widget", function(ok)
     if not ok then
-      return core.log(prefix.."Failed to clone lite-xl-widgets!")
+      lspinstall:error("Failed to clone lite-xl-widgets!")
+      core.rm(DATADIR.."/lite-xl-lsp", true)
+      return
     end
-    core.log(prefix.."lite-xl-widgets installed, moving some files...")
+    lspinstall:log("lite-xl-widgets installed, moving some files...")
     local ok, err = os.rename(DATADIR.."/lite-xl-lsp/lsp", DATADIR.."/plugins/lsp")
     if not ok then
-      return core.log(prefix.."Failed to move lite-xl-lsp/lsp to plugins/: "..err)
+      return lspinstall:error("Failed to move lite-xl-lsp/lsp to plugins/: "..err)
     end
     ok, err = os.rename(
       DATADIR.."/lite-xl-lsp/autocomplete.lua",
       DATADIR.."/plugins/autocomplete.lua"
     )
     if not ok then
-      return core.log(
-        prefix.."Failed to move lite-xl-lsp/autocomplete.lua to plugins/: "..err
+      return lspinstall:error(
+        "Failed to move lite-xl-lsp/autocomplete.lua to plugins/: "..err
       )
     end
-    if not remove(DATADIR.."/lite-xl-lsp") then return end
-    core.log(prefix.."lite-xl-lsp installed with success")
+    if not common.rm(DATADIR.."/lite-xl-lsp", true) then
+      return lspinstall:log(
+        "lite-xl-lsp installed but I got an error removing "..DATADIR.."/lite-xl-lsp"
+      )
+    end
+    lspinstall:log("lite-xl-lsp installed with success")
   end)
 end)
