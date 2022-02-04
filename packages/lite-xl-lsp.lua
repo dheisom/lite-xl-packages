@@ -30,7 +30,7 @@ clone(git.lsp, DATADIR.."/lite-xl-lsp", function(ok)
   if not ok then
     return lspinstall:error("Failed to clone lite-xl-lsp!")
   end
-  lspconfig:log("Cloning lite-xl-widgets")
+  lspinstall:log("Cloning lite-xl-widgets")
   clone(git.widgets, DATADIR.."/widget", function(ok)
     if not ok then
       lspinstall:error("Failed to clone lite-xl-widgets!")
