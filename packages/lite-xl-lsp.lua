@@ -16,30 +16,21 @@ local function clone(url, path, callback)
   )
 end
 
-local function remove(path)
-  local ok, err = core.rm(path, true)
-  if not ok then
-    lspinstall:error("Failed to remove '"..path.."': "..err)
-    return false
-  end
-  return true
-end
-
 lspinstall:log("Cloning lite-xl-lsp plugin...")
 clone(git.lsp, DATADIR.."/lite-xl-lsp", function(ok)
   if not ok then
     return lspinstall:error("Failed to clone lite-xl-lsp!")
   end
   lspinstall:log("Cloning lite-xl-widgets")
-  clone(git.widgets, DATADIR.."/widget", function(ok)
-    if not ok then
+  clone(git.widgets, DATADIR.."/widget", function(widgetOk)
+    if not widgetOk then
       lspinstall:error("Failed to clone lite-xl-widgets!")
       core.rm(DATADIR.."/lite-xl-lsp", true)
       return
     end
     lspinstall:log("lite-xl-widgets installed, moving some files...")
-    local ok, err = os.rename(DATADIR.."/lite-xl-lsp/lsp", DATADIR.."/plugins/lsp")
-    if not ok then
+    local renamed, err = os.rename(DATADIR.."/lite-xl-lsp/lsp", DATADIR.."/plugins/lsp")
+    if not renamed then
       return lspinstall:error("Failed to move lite-xl-lsp/lsp to plugins/: "..err)
     end
     ok, err = os.rename(

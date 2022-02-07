@@ -1,4 +1,3 @@
-local core = require 'core'
 local net = require 'plugins.lite-xl-pm.net'
 local logger = require 'plugins.lite-xl-pm.logger'
 
@@ -16,13 +15,13 @@ net.download(
     net.download(
       USERDIR .. "/fonts/nonicons.ttf",
       "https://github.com/yamatsum/nonicons/raw/master/dist/nonicons.ttf",
-      function(ok, out)
-        if not ok then
-          nonicons:log("Failed to download font: " .. out)
+      function(noniconsOk, err)
+        if not noniconsOk then
+          nonicons:log("Failed to download font: " .. err)
           os.remove(USERDIR .. "/plugins/nonicons.lua")
           return
         end
-        nonicons:log(prefix .. "Nonicons installed wih success, restart your editor")
+        nonicons:log("Nonicons installed wih success, restart your editor")
       end
     )
   end
