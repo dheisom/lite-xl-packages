@@ -1,52 +1,87 @@
 local core = require 'core'
 local common = require 'core.common'
-local util = require 'plugins.lite-xl-pm.util'
+local net = require 'plugins.lite-xl-pm.net'
 local logger = require 'plugins.lite-xl-pm.logger'
 
 local lspinstall = logger:new("[lsp-install]")
 local git = {
   lsp = "https://github.com/jgmdev/lite-xl-lsp.git",
-  widgets = "https://github.com/jgmdev/lite-xl-widgets.git"
+  widgets = "https://github.com/jgmdev/lite-xl-widgets.git",
+  lintplus = "https://github.com/liquidev/lintplus"
 }
 
-local function clone(url, path, callback)
-  util.run(
-    { "git", "clone", "--depth=1", url, path },
-    callback
+local function install_linplus(ok, err)
+  if not ok then
+    lspinstall:error("Failed to clone lintplus: " .. err)
+  else
+    lspinstall:log("Lintplus installed")
+  end
+  coroutine.yield(2)
+end
+
+local function install_widget(ok, err)
+  if not ok then
+    lspinstall:error("Failed to clone lite-xl-widgets: " .. err)
+    core.rm(DATADIR.."/plugins/lsp", true)
+    core.rm(DATADIR.."/plugins/autocomplete.lua")
+    os.rename(
+      DATADIR.."/plugins/autocomplete.lua.old",
+      DATADIR.."/plugins/autocomplete.lua"
+    )
+    return
+  end
+  core.command_view:enter(
+    "Do you want to install lintplus",
+    function(text, item)
+      local option = text or item.text
+      if option == "No" then
+        return
+      end
+      lspinstall:log("Cloning lintplus...")
+      net.clone(git.lintplus, DATADIR.."/plugins/lintplus", install_linplus)
+    end,
+    function(text)
+      local options = { "Yes", "No" }
+      return common.fuzzy_match(options, text)
+    end
   )
+  if not common.rm(DATADIR.."/lite-xl-lsp", true) then
+    return lspinstall:log(
+      "lite-xl-lsp installed but I got an error removing "
+      ..DATADIR.."/lite-xl-lsp"
+    )
+  end
+  lspinstall:log("lite-xl-lsp installed with success")
+end
+
+local function install_lsp(ok, err)
+  if not ok then
+    return lspinstall:error("Failed to clone lite-xl-lsp: " .. err)
+  end
+  lspinstall:log("lite-xl-lsp installed, moving some files...")
+  local renamed
+  renamed, err = os.rename(
+    DATADIR.."/lite-xl-lsp/lsp",
+    DATADIR.."/plugins/lsp"
+  )
+  if not renamed then
+    lspinstall:error("Failed to move lite-xl-lsp/lsp to plugins/: " .. err)
+    return core.rm(DATADIR.."/lite-xl-lsp", true)
+  end
+  -- Make a backup of default autocomplete.lua
+  os.rename(
+    DATADIR.."/plugins/autocomplete.lua",
+    DATADIR.."/plugins/autocomplete.lua.old"
+  )
+  -- Replace default autocomplete by lite-xl-lsp autocomplete
+  os.rename(
+    DATADIR.."/lite-xl-lsp/autocomplete.lua",
+    DATADIR.."/plugins/autocomplete.lua"
+  )
+  core.rm(DATADIR .. "/lite-xl-lsp", true)
+  lspinstall:log("Cloning lite-xl-widgets...")
+  net.clone(git.widgets, DATADIR.."/widget", install_widget)
 end
 
 lspinstall:log("Cloning lite-xl-lsp plugin...")
-clone(git.lsp, DATADIR.."/lite-xl-lsp", function(ok)
-  if not ok then
-    return lspinstall:error("Failed to clone lite-xl-lsp!")
-  end
-  lspinstall:log("Cloning lite-xl-widgets")
-  clone(git.widgets, DATADIR.."/widget", function(widgetOk)
-    if not widgetOk then
-      lspinstall:error("Failed to clone lite-xl-widgets!")
-      core.rm(DATADIR.."/lite-xl-lsp", true)
-      return
-    end
-    lspinstall:log("lite-xl-widgets installed, moving some files...")
-    local renamed, err = os.rename(DATADIR.."/lite-xl-lsp/lsp", DATADIR.."/plugins/lsp")
-    if not renamed then
-      return lspinstall:error("Failed to move lite-xl-lsp/lsp to plugins/: "..err)
-    end
-    ok, err = os.rename(
-      DATADIR.."/lite-xl-lsp/autocomplete.lua",
-      DATADIR.."/plugins/autocomplete.lua"
-    )
-    if not ok then
-      return lspinstall:error(
-        "Failed to move lite-xl-lsp/autocomplete.lua to plugins/: "..err
-      )
-    end
-    if not common.rm(DATADIR.."/lite-xl-lsp", true) then
-      return lspinstall:log(
-        "lite-xl-lsp installed but I got an error removing "..DATADIR.."/lite-xl-lsp"
-      )
-    end
-    lspinstall:log("lite-xl-lsp installed with success")
-  end)
-end)
+net.clone(git.lsp, DATADIR.."/lite-xl-lsp", install_lsp)
