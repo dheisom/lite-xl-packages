@@ -22,8 +22,8 @@ end
 local function install_widget(ok, err)
   if not ok then
     lspinstall:error("Failed to clone lite-xl-widgets: " .. err)
-    core.rm(DATADIR.."/plugins/lsp", true)
-    core.rm(DATADIR.."/plugins/autocomplete.lua")
+    common.rm(DATADIR.."/plugins/lsp", true)
+    common.rm(DATADIR.."/plugins/autocomplete.lua")
     os.rename(
       DATADIR.."/plugins/autocomplete.lua.old",
       DATADIR.."/plugins/autocomplete.lua"
@@ -45,12 +45,6 @@ local function install_widget(ok, err)
       return common.fuzzy_match(options, text)
     end
   )
-  if not common.rm(DATADIR.."/lite-xl-lsp", true) then
-    return lspinstall:log(
-      "lite-xl-lsp installed but I got an error removing "
-      ..DATADIR.."/lite-xl-lsp"
-    )
-  end
   lspinstall:log("lite-xl-lsp installed with success")
 end
 
@@ -66,7 +60,7 @@ local function install_lsp(ok, err)
   )
   if not renamed then
     lspinstall:error("Failed to move lite-xl-lsp/lsp to plugins/: " .. err)
-    return core.rm(DATADIR.."/lite-xl-lsp", true)
+    return common.rm(DATADIR.."/lite-xl-lsp", true)
   end
   -- Make a backup of default autocomplete.lua
   os.rename(
@@ -78,7 +72,7 @@ local function install_lsp(ok, err)
     DATADIR.."/lite-xl-lsp/autocomplete.lua",
     DATADIR.."/plugins/autocomplete.lua"
   )
-  core.rm(DATADIR .. "/lite-xl-lsp", true)
+  common.rm(DATADIR .. "/lite-xl-lsp", true)
   lspinstall:log("Cloning lite-xl-widgets...")
   net.clone(git.widgets, DATADIR.."/widget", install_widget)
 end
