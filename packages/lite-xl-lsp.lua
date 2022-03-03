@@ -1,7 +1,7 @@
 local core = require 'core'
 local common = require 'core.common'
-local net = require 'plugins.lite-xl-pm.net'
-local logger = require 'plugins.lite-xl-pm.logger'
+local net = require 'plugins.lxpm.net'
+local logger = require 'plugins.lxpm.logger'
 
 local lspinstall = logger:new("[lsp-install]")
 local git = {
