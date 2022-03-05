@@ -1,5 +1,5 @@
-local net = require 'plugins.lite-xl-pm.net'
-local logger = require 'plugins.lite-xl-pm.logger'
+local net = require 'plugins.lxpm.net'
+local logger = require 'plugins.lxpm.logger'
 
 local nonicons = logger:new("[nonicons-install]")
 
